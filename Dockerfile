@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
-# This is the exact RunPod ComfyUI image that was already proven to boot on the Pod.
-FROM runpod/comfyui:cuda12.8
+# Pin the linux/amd64 image behind cuda12.8. The mutable tag switched to the
+# 1.4.4 layout, where ComfyUI is baked under /opt and copied on first startup.
+FROM runpod/comfyui:cuda12.8@sha256:7078f94dbe28d079c487c245dc3524443e2c6225a6208a1fff8c7a652c1b3a40
 
 ARG VNCCS_REF=050cb4b15875a7eefc180d1f00b97bf5e8b17104
 ARG VNCCS_UTILS_REF=1908ddfa8a5084a360783ca596f27678743c5496
@@ -18,6 +19,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONNOUSERSITE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
+    PIP_CONSTRAINT=/opt/comfyui-runtime-constraints.txt \
     COMFYUI_DIR=/workspace/runpod-slim/ComfyUI \
     COMFYUI_PYTHON=/workspace/runpod-slim/ComfyUI/.venv-cu128/bin/python
 
@@ -44,7 +46,15 @@ RUN apt-get update && \
 
 COPY scripts/install_requirements.py /opt/vnccs/install_requirements.py
 
-RUN if [[ ! -f "${COMFYUI_DIR}/main.py" ]]; then \
+RUN if [[ ! -f /opt/comfyui-baked/main.py ]]; then \
+        echo "ERROR: Base image does not contain /opt/comfyui-baked/main.py" >&2; \
+        exit 19; \
+    fi; \
+    rm -rf "${COMFYUI_DIR}"; \
+    cp -a /opt/comfyui-baked "${COMFYUI_DIR}"; \
+    python3.12 -m venv --system-site-packages "${COMFYUI_DIR}/.venv-cu128"; \
+    "${COMFYUI_PYTHON}" -m ensurepip; \
+    if [[ ! -f "${COMFYUI_DIR}/main.py" ]]; then \
         echo "ERROR: ComfyUI main.py not found at ${COMFYUI_DIR}/main.py" >&2; \
         exit 20; \
     fi; \
