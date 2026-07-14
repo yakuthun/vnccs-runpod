@@ -54,6 +54,8 @@ RUN if [[ ! -f /opt/comfyui-baked/main.py ]]; then \
     cp -a /opt/comfyui-baked "${COMFYUI_DIR}"; \
     python3.12 -m venv --system-site-packages "${COMFYUI_DIR}/.venv-cu128"; \
     "${COMFYUI_PYTHON}" -m ensurepip; \
+    "${COMFYUI_PYTHON}" -c 'import torch; print(f"{torch.__version__}|{torch.version.cuda}")' \
+        > /opt/vnccs/base-torch.txt; \
     if [[ ! -f "${COMFYUI_DIR}/main.py" ]]; then \
         echo "ERROR: ComfyUI main.py not found at ${COMFYUI_DIR}/main.py" >&2; \
         exit 20; \
@@ -85,6 +87,7 @@ RUN "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --upgrade "pip<26" packagi
     "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --prefer-binary \
         "av==16.0.1" \
         "gguf==0.13.0" \
+        "hydra-core==1.3.2" \
         "iopath==0.1.10" \
         "kornia==0.7.4" \
         "omegaconf==2.3.0" \
@@ -95,8 +98,11 @@ RUN "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --upgrade "pip<26" packagi
         "timm==1.0.17" \
         "transformers==4.57.6" \
         "ultralytics==8.3.162" && \
-    "${COMFYUI_PYTHON}" -m pip install --no-cache-dir \
+    SAM2_BUILD_CUDA=0 "${COMFYUI_PYTHON}" -m pip install --no-cache-dir \
+        --no-build-isolation \
+        --no-deps \
         "git+https://github.com/facebookresearch/sam2.git@${SAM2_REF}" && \
+    "${COMFYUI_PYTHON}" -c 'import hydra, iopath, numpy, PIL, sam2, torch, torchvision, tqdm; print("SAM2 import verified")' && \
     "${COMFYUI_PYTHON}" /opt/vnccs/install_requirements.py \
         "${COMFYUI_DIR}/custom_nodes/ComfyUI_VNCCS/requirements.txt" \
         "${COMFYUI_DIR}/custom_nodes/ComfyUI_VNCCS_Utils/requirements.txt" \
@@ -106,7 +112,13 @@ RUN "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --upgrade "pip<26" packagi
         "${COMFYUI_DIR}/custom_nodes/ComfyUI-SeedVR2_VideoUpscaler/requirements.txt" \
         "${COMFYUI_DIR}/custom_nodes/ComfyUI-Easy-Sam3/requirements.txt" && \
     "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --no-deps --pre --upgrade comfyui-manager && \
-    "${COMFYUI_PYTHON}" -c 'import torch; print("Torch preserved:", torch.__version__, "CUDA:", torch.version.cuda)'
+    current_torch=$("${COMFYUI_PYTHON}" -c 'import torch; print(f"{torch.__version__}|{torch.version.cuda}")') && \
+    expected_torch=$(cat /opt/vnccs/base-torch.txt) && \
+    if [[ "${current_torch}" != "${expected_torch}" ]]; then \
+        echo "ERROR: Torch/CUDA changed: expected ${expected_torch}, got ${current_torch}" >&2; \
+        exit 30; \
+    fi && \
+    echo "Torch/CUDA preserved: ${current_torch}"
 
 COPY scripts/verify_nodes.py /opt/vnccs/verify_nodes.py
 COPY scripts/smoke-test.sh /opt/vnccs/smoke-test.sh
