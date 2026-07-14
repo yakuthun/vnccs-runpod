@@ -44,9 +44,15 @@ RUN apt-get update && \
 
 COPY scripts/install_requirements.py /opt/vnccs/install_requirements.py
 
-RUN test -f "${COMFYUI_DIR}/main.py" && \
-    test -x "${COMFYUI_PYTHON}" && \
-    mkdir -p "${COMFYUI_DIR}/custom_nodes" && \
+RUN if [[ ! -f "${COMFYUI_DIR}/main.py" ]]; then \
+        echo "ERROR: ComfyUI main.py not found at ${COMFYUI_DIR}/main.py" >&2; \
+        exit 20; \
+    fi; \
+    if [[ ! -x "${COMFYUI_PYTHON}" ]]; then \
+        echo "ERROR: ComfyUI Python is missing or not executable at ${COMFYUI_PYTHON}" >&2; \
+        exit 21; \
+    fi; \
+    mkdir -p "${COMFYUI_DIR}/custom_nodes"; \
     clone_ref() { \
         local url="$1" ref="$2" dest="$3"; \
         rm -rf "$dest"; \
