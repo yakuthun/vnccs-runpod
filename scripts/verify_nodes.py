@@ -15,15 +15,14 @@ REQUIRED_NODES = (
 
 def main() -> None:
     if len(sys.argv) != 2:
-        raise SystemExit("Kullanım: verify_nodes.py object_info.json")
+        raise SystemExit("Usage: verify_nodes.py object_info.json")
 
     data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     missing = [name for name in REQUIRED_NODES if name not in data]
-
     if missing:
-        raise SystemExit("Eksik VNCCS node'ları: " + ", ".join(missing))
+        raise SystemExit("Missing VNCCS nodes: " + ", ".join(missing))
 
-    print("VNCCS smoke test: OK")
+    print("VNCCS node smoke test: OK")
     for name in REQUIRED_NODES:
         print(f"  - {name}")
 

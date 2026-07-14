@@ -1,56 +1,38 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-mkdir -p \
-    /workspace/models \
-    /workspace/input \
-    /workspace/output \
-    /workspace/temp \
-    /workspace/user \
-    /workspace/cache
-
-# Preserve RunPod's Web Terminal/Jupyter services from the base image.
-if [[ -x /start.sh ]]; then
-    /start.sh &
-fi
+C="${COMFYUI_DIR:-/workspace/runpod-slim/ComfyUI}"
+P="${COMFYUI_PYTHON:-$C/.venv-cu128/bin/python}"
 
 echo "============================================================"
-echo "VNCCS RunPod image başlatılıyor"
+echo "VNCCS immutable RunPod image"
 echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-<unset>}"
 echo "NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-<unset>}"
 echo "============================================================"
 
 GPU_READY=0
 
-# Every attempt uses a new Python process, so an early CUDA failure is not cached.
+# Each probe is a fresh process; a temporary early CUDA failure cannot stay cached.
 for attempt in $(seq 1 120); do
     if nvidia-smi >/dev/null 2>&1 && \
-       python -c 'import torch; assert torch.cuda.is_available(); print("GPU:", torch.cuda.get_device_name(0)); print("Torch:", torch.__version__, "CUDA:", torch.version.cuda)' ; then
+       "$P" -c 'import torch; assert torch.cuda.is_available(); print("GPU:", torch.cuda.get_device_name(0)); print("Torch:", torch.__version__, "CUDA:", torch.version.cuda)' ; then
         GPU_READY=1
         break
     fi
-
-    echo "GPU henüz hazır değil (${attempt}/120); 2 saniye bekleniyor..."
+    echo "GPU not ready yet (${attempt}/120); waiting 2 seconds..."
     sleep 2
 done
 
 if [[ "${GPU_READY}" != "1" ]]; then
-    echo "HATA: GPU/CUDA 4 dakika içinde hazır olmadı."
-    echo "Bu hata Python paketi kurulumundan değil, Pod'un GPU bağlanmasından kaynaklanır."
+    echo "ERROR: GPU/CUDA did not become available within 4 minutes."
     exit 70
 fi
 
-echo "Kurulu kaynak sürümleri:"
-cat /opt/build-info.txt
-echo
+cat /opt/vnccs/build-info.txt
+cd "$C"
 
-cd /opt/ComfyUI
-
-exec python main.py \
+exec "$P" main.py \
     --listen 0.0.0.0 \
     --port 8188 \
     --enable-manager \
-    --disable-auto-launch \
-    --input-directory /workspace/input \
-    --output-directory /workspace/output \
-    --temp-directory /workspace/temp
+    --disable-auto-launch

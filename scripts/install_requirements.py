@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install requirements without replacing RunPod's CUDA/Torch stack."""
+"""Install custom-node requirements without replacing CUDA/Torch packages."""
 
 from __future__ import annotations
 
@@ -19,18 +19,17 @@ BLOCKED_PACKAGES = {
     "llama-cpp-python",
 }
 
-# Impact Pack lists the moving SAM2 main branch. Dockerfile installs a pinned SHA.
 BLOCKED_URL_PARTS = {
     "github.com/facebookresearch/sam2",
 }
 
 
-def package_name(line: str) -> str | None:
-    candidate = line.strip()
-    if not candidate or candidate.startswith("#"):
+def requirement_name(line: str) -> str | None:
+    value = line.strip()
+    if not value or value.startswith("#"):
         return None
     try:
-        return canonicalize_name(Requirement(candidate).name)
+        return canonicalize_name(Requirement(value).name)
     except InvalidRequirement:
         return None
 
@@ -39,33 +38,28 @@ def sanitize(path: Path) -> tuple[list[str], list[str]]:
     kept: list[str] = []
     removed: list[str] = []
 
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        stripped = raw_line.strip()
-        normalized = package_name(stripped)
-
-        if normalized in BLOCKED_PACKAGES:
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        stripped = raw.strip()
+        if requirement_name(stripped) in BLOCKED_PACKAGES:
             removed.append(stripped)
             continue
-
-        lowered = stripped.lower()
-        if any(part in lowered for part in BLOCKED_URL_PARTS):
+        if any(part in stripped.lower() for part in BLOCKED_URL_PARTS):
             removed.append(stripped)
             continue
-
-        kept.append(raw_line)
+        kept.append(raw)
 
     return kept, removed
 
 
-def install_file(path: Path) -> None:
+def install(path: Path) -> None:
     if not path.is_file():
-        print(f"[requirements] Atlandı, bulunamadı: {path}")
+        print(f"[requirements] Missing, skipped: {path}")
         return
 
     kept, removed = sanitize(path)
-    print(f"[requirements] Kuruluyor: {path}")
+    print(f"[requirements] Installing: {path}")
     for item in removed:
-        print(f"[requirements] Koruma nedeniyle atlandı: {item}")
+        print(f"[requirements] Protected package skipped: {item}")
 
     content = "\n".join(kept).strip()
     if not content:
@@ -78,7 +72,7 @@ def install_file(path: Path) -> None:
         delete=False,
     ) as handle:
         handle.write(content + "\n")
-        temporary_path = Path(handle.name)
+        temp_path = Path(handle.name)
 
     try:
         subprocess.check_call(
@@ -92,19 +86,18 @@ def install_file(path: Path) -> None:
                 "--upgrade-strategy",
                 "only-if-needed",
                 "-r",
-                str(temporary_path),
+                str(temp_path),
             ]
         )
     finally:
-        temporary_path.unlink(missing_ok=True)
+        temp_path.unlink(missing_ok=True)
 
 
 def main() -> None:
     if len(sys.argv) < 2:
-        raise SystemExit("En az bir requirements.txt yolu gerekli.")
-
+        raise SystemExit("At least one requirements.txt path is required.")
     for argument in sys.argv[1:]:
-        install_file(Path(argument))
+        install(Path(argument))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+C="${COMFYUI_DIR:-/workspace/runpod-slim/ComfyUI}"
+P="${COMFYUI_PYTHON:-$C/.venv-cu128/bin/python}"
 LOG=/tmp/comfyui-build-smoke.log
 JSON=/tmp/comfyui-object-info.json
 PID=""
@@ -13,35 +15,31 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cd /opt/ComfyUI
+cd "$C"
 
-python main.py \
+"$P" main.py \
     --cpu \
     --listen 127.0.0.1 \
-    --port 8188 \
+    --port 8199 \
     --enable-manager \
     --disable-auto-launch \
-    --input-directory /workspace/input \
-    --output-directory /workspace/output \
-    --temp-directory /workspace/temp \
     >"${LOG}" 2>&1 &
 PID=$!
 
 for _ in $(seq 1 120); do
     if ! kill -0 "${PID}" 2>/dev/null; then
-        echo "ComfyUI build smoke test sırasında kapandı."
+        echo "ComfyUI exited during image build smoke test."
         cat "${LOG}"
         exit 1
     fi
 
-    if curl -fsS http://127.0.0.1:8188/object_info >"${JSON}"; then
-        python /opt/scripts/verify_nodes.py "${JSON}"
+    if curl -fsS http://127.0.0.1:8199/object_info >"${JSON}"; then
+        "$P" /opt/vnccs/verify_nodes.py "${JSON}"
         exit 0
     fi
-
     sleep 2
 done
 
-echo "ComfyUI build smoke test zaman aşımına uğradı."
+echo "ComfyUI image build smoke test timed out."
 cat "${LOG}"
 exit 1

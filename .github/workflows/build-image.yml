@@ -28,11 +28,10 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/local/share/boost
-          sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
           docker system prune --all --force || true
           df -h
 
-      - name: Validate tag and calculate image name
+      - name: Validate version and image name
         id: vars
         shell: bash
         env:
