@@ -1,5 +1,16 @@
-.git
-*.zip
-__pycache__
-*.pyc
-.DS_Store
+# This workspace contains many generated PNGs and experimental workflows.
+# Keep the Docker context deterministic and explicitly allow only production
+# image sources.
+*
+!Dockerfile
+!.dockerignore
+!scripts/
+!scripts/**
+!custom_nodes/
+!custom_nodes/VNCCS_SourcePoseSprite/
+!custom_nodes/VNCCS_SourcePoseSprite/**
+!VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json
+!VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json
+
+**/__pycache__/
+**/*.pyc
