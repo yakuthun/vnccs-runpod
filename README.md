@@ -65,7 +65,7 @@ the Pod terminal:
 
 It downloads and SHA-256 verifies exactly:
 
-- `Qwen-Rapid-AIO-NSFW-v19.safetensors` from the pinned Phr00t revision.
+- `Qwen-Rapid-AIO-NSFW-v19.safetensors` and `Qwen-Rapid-AIO-NSFW-v23.safetensors` from pinned Phr00t revisions.
 - `VNCCS_QIE2511_PoseStudio_ART_V5.9.5.safetensors` from the pinned
   MIUProject revision.
 - BiRefNet Lite used by `VNCCS_AutoPersonMask`.

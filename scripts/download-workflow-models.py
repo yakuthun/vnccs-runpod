@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download the two large runtime assets used by the bundled sprite workflows.
+"""Download and verify runtime assets used by the bundled VNCCS workflows.
 
 Custom nodes and Python dependencies belong in the immutable Docker image.
 Large models are deliberately downloaded to each disposable Pod, but are
@@ -40,7 +40,7 @@ def verify(path: Path, expected_size: int, expected_sha256: str) -> bool:
     return True
 
 
-def download_checkpoint() -> Path:
+def download_checkpoint_v19() -> Path:
     target = COMFYUI_DIR / "models/checkpoints/Qwen-Rapid-AIO-NSFW-v19.safetensors"
     expected_size = 28_431_843_583
     expected_hash = "ba71575515709c9912560d1176b2386eaa49294fedc6ce57b9734aa57e91e5ac"
@@ -56,6 +56,33 @@ def download_checkpoint() -> Path:
             repo_id="Phr00t/Qwen-Image-Edit-Rapid-AIO",
             filename="v19/Qwen-Rapid-AIO-NSFW-v19.safetensors",
             revision="88c705939c00b3833a4fff1bce35e3ca648cab83",
+            local_dir=staging,
+        )
+    )
+    if target.exists():
+        target.unlink()
+    shutil.move(str(downloaded), str(target))
+    verify(target, expected_size, expected_hash)
+    print(f"Checkpoint ready: {target}")
+    return target
+
+
+def download_checkpoint_v23() -> Path:
+    target = COMFYUI_DIR / "models/checkpoints/Qwen-Rapid-AIO-NSFW-v23.safetensors"
+    expected_size = 28_431_840_023
+    expected_hash = "fdb919fc81bea63f13759967fc92c9118142e5c70d4e6795199233a35eefa233"
+    if verify(target, expected_size, expected_hash):
+        print(f"Checkpoint already ready: {target}")
+        return target
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staging = target.parent / ".hf-v23-download"
+    staging.mkdir(parents=True, exist_ok=True)
+    downloaded = Path(
+        hf_hub_download(
+            repo_id="Phr00t/Qwen-Image-Edit-Rapid-AIO",
+            filename="v23/Qwen-Rapid-AIO-NSFW-v23.safetensors",
+            revision="0758cce6dc3a0f5651de28369f56bad1c989d4a3",
             local_dir=staging,
         )
     )
@@ -184,7 +211,8 @@ def download_sam3_details() -> Path:
 def main() -> None:
     if not (COMFYUI_DIR / "main.py").is_file():
         raise SystemExit(f"ComfyUI not found at {COMFYUI_DIR}")
-    download_checkpoint()
+    download_checkpoint_v19()
+    download_checkpoint_v23()
     download_pose_lora()
     download_birefnet()
     download_sam3d_body()
@@ -193,8 +221,10 @@ def main() -> None:
     marker.write_text(
         json.dumps(
             {
-                "checkpoint": "Qwen-Rapid-AIO-NSFW-v19.safetensors",
-                "checkpoint_revision": "88c705939c00b3833a4fff1bce35e3ca648cab83",
+                "checkpoint_v19": "Qwen-Rapid-AIO-NSFW-v19.safetensors",
+                "checkpoint_v19_revision": "88c705939c00b3833a4fff1bce35e3ca648cab83",
+                "checkpoint_v23": "Qwen-Rapid-AIO-NSFW-v23.safetensors",
+                "checkpoint_v23_revision": "0758cce6dc3a0f5651de28369f56bad1c989d4a3",
                 "pose_lora": "VNCCS_QIE2511_PoseStudio_ART_V5.9.5.safetensors",
                 "pose_lora_revision": "5719f5f86fdf33f4c5fa918c562d5ea62985d5e8",
                 "birefnet_revision": "7838f1c3472f827cd8ce13ab5ccc2ce48077360f",

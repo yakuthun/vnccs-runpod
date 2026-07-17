@@ -26,6 +26,7 @@ REQUIRED_NODES = (
 
 REQUIRED_FILES = {
     "models/checkpoints/Qwen-Rapid-AIO-NSFW-v19.safetensors": 28_431_843_583,
+    "models/checkpoints/Qwen-Rapid-AIO-NSFW-v23.safetensors": 28_431_840_023,
     "models/loras/qwen/VNCCS/VNCCS_QIE2511_PoseStudio_ART_V5.9.5.safetensors": 1_179_883_808,
     "models/birefnet/BiRefNet_lite/model.safetensors": 177_634_392,
     "models/sam3dbody/model.ckpt": 2_109_129_346,
