@@ -6,7 +6,7 @@ on:
       version:
         description: "Immutable image tag, for example v1.0.0"
         required: true
-        default: "v1.1.0"
+        default: "v1.1.1"
 
 permissions:
   contents: read

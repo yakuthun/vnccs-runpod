@@ -95,6 +95,7 @@ COPY scripts/verify_workflows.py /opt/vnccs/verify_workflows.py
 COPY scripts/verify-running-pod.py /opt/vnccs/verify-running-pod.py
 COPY scripts/download-workflow-models.py /opt/vnccs/download-workflow-models.py
 COPY scripts/smoke-test.sh /opt/vnccs/smoke-test.sh
+COPY scripts/runpod-entrypoint.sh /opt/vnccs/runpod-entrypoint.sh
 
 # These nodes are project-owned workflow infrastructure, not part of the
 # upstream AHEKOT/VNCCS repository.  They must travel with every immutable
@@ -135,3 +136,7 @@ EXPOSE 8188
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
     CMD curl -fsS http://127.0.0.1:8188/system_stats >/dev/null || exit 1
+
+# Keep RunPod's stock /start.sh lifecycle.  The wrapper only persists the
+# official ComfyUI allocator fallback before delegating to it.
+ENTRYPOINT ["/opt/vnccs/runpod-entrypoint.sh"]
