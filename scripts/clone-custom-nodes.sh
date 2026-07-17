@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+on_error() {
+    local exit_code="$?"
+    echo "ERROR: custom-node bootstrap failed at line ${BASH_LINENO[0]} while running: ${BASH_COMMAND}" >&2
+    exit "${exit_code}"
+}
+trap on_error ERR
+
 : "${COMFYUI_DIR:?COMFYUI_DIR is required}"
 : "${VNCCS_REF:?VNCCS_REF is required}"
 : "${VNCCS_UTILS_REF:?VNCCS_UTILS_REF is required}"
@@ -13,33 +20,66 @@ set -Eeuo pipefail
 CUSTOM_NODES_DIR="${COMFYUI_DIR}/custom_nodes"
 mkdir -p "${CUSTOM_NODES_DIR}"
 
+case "${CUSTOM_NODES_DIR}" in
+    /*) ;;
+    *)
+        echo "ERROR: COMFYUI_DIR must be an absolute path, got: ${COMFYUI_DIR}" >&2
+        exit 20
+        ;;
+esac
+
+if ! command -v git >/dev/null 2>&1; then
+    echo "ERROR: git is not installed in the base image." >&2
+    exit 21
+fi
+
+echo "Bootstrapping pinned custom nodes into ${CUSTOM_NODES_DIR}"
+git --version
+
+fetch_pinned_ref() {
+    local dest="$1"
+    local ref="$2"
+    local attempt
+
+    for attempt in 1 2 3; do
+        if GIT_TERMINAL_PROMPT=0 git -C "${dest}" \
+            -c http.version=HTTP/1.1 fetch --depth=1 origin "${ref}"; then
+            return 0
+        fi
+        echo "WARN: fetch attempt ${attempt}/3 failed for ${ref}; retrying..." >&2
+        sleep "${attempt}"
+    done
+
+    echo "ERROR: could not fetch pinned ref ${ref} after three attempts." >&2
+    return 1
+}
+
 clone_ref() {
     local url="$1"
     local ref="$2"
     local directory_name="$3"
     local dest="${CUSTOM_NODES_DIR}/${directory_name}"
-    local expected_root resolved_dest actual
+    local actual
 
-    expected_root="$(realpath -m "${CUSTOM_NODES_DIR}")"
-    resolved_dest="$(realpath -m "${dest}")"
-    case "${resolved_dest}" in
-        "${expected_root}"/*) ;;
+    case "${directory_name}" in
+        ComfyUI_VNCCS|ComfyUI_VNCCS_Utils|ComfyUI-GGUF|ComfyUI-Impact-Pack|ComfyUI-Impact-Subpack|ComfyUI-SeedVR2_VideoUpscaler|ComfyUI-Easy-Sam3) ;;
         *)
-            echo "ERROR: refusing unsafe custom-node destination: ${resolved_dest}" >&2
-            exit 20
+            echo "ERROR: unsupported custom-node destination: ${directory_name}" >&2
+            exit 22
             ;;
     esac
 
-    rm -rf -- "${resolved_dest}"
-    git init "${resolved_dest}"
-    git -C "${resolved_dest}" remote add origin "${url}"
-    git -C "${resolved_dest}" fetch --depth 1 origin "${ref}"
-    git -C "${resolved_dest}" checkout --detach FETCH_HEAD
+    echo "Installing ${directory_name} at pinned ref ${ref}"
+    rm -rf -- "${dest}"
+    git init --quiet "${dest}"
+    git -C "${dest}" remote add origin "${url}"
+    fetch_pinned_ref "${dest}" "${ref}"
+    git -C "${dest}" checkout --detach --quiet FETCH_HEAD
 
-    actual="$(git -C "${resolved_dest}" rev-parse HEAD)"
+    actual="$(git -C "${dest}" rev-parse HEAD)"
     if [[ "${actual}" != "${ref}" ]]; then
         echo "ERROR: ${directory_name} resolved to ${actual}, expected ${ref}" >&2
-        exit 21
+        exit 23
     fi
     echo "Pinned ${directory_name}: ${actual}"
 }
