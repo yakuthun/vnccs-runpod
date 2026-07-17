@@ -45,6 +45,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY scripts/install_requirements.py /opt/vnccs/install_requirements.py
+COPY scripts/preload_models.py /opt/vnccs/preload_models.py
+COPY models/preloaded-models.json /opt/vnccs/preloaded-models.json
 
 RUN if [[ ! -f /opt/comfyui-baked/main.py ]]; then \
         echo "ERROR: Base image does not contain /opt/comfyui-baked/main.py" >&2; \
@@ -120,11 +122,42 @@ RUN "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --upgrade "pip<26" packagi
     fi && \
     echo "Torch/CUDA preserved: ${current_torch}"
 
+# Preload the exact model set exercised on the validated RunPod. Every source
+# URL is revision-pinned and every payload is SHA256-verified. Q4 and the QIE
+# text encoder exceed safe registry upload sizes as single blobs, so they are
+# downloaded into independently publishable 3 GB layers and assembled from
+# local image data by start.sh. Q5 is intentionally excluded because it was an
+# accidental download and Q4 is the selected 24 GB VRAM profile.
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qwen-q4 --part-index 0
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qwen-q4 --part-index 1
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qwen-q4 --part-index 2
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qwen-q4 --part-index 3
+
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qie-text-encoder --part-index 0
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qie-text-encoder --part-index 1
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qie-text-encoder --part-index 2
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qie-text-encoder --part-index 3
+
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id anima-base
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id anima-text-encoder
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qwen-vae
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id clothes-core
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id pose-studio
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id qwen-lightning
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id anima-turbo
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id seedvr2-q4
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id seedvr2-vae
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id sam3-fp16
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id face-yolo
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py download --id sam-vit-b
+
+RUN "${COMFYUI_PYTHON}" /opt/vnccs/preload_models.py verify
+
 COPY scripts/verify_nodes.py /opt/vnccs/verify_nodes.py
 COPY scripts/smoke-test.sh /opt/vnccs/smoke-test.sh
 COPY scripts/start.sh /opt/vnccs/start.sh
 
-RUN chmod +x /opt/vnccs/*.sh && \
+RUN chmod +x /opt/vnccs/*.sh /opt/vnccs/preload_models.py && \
     /opt/vnccs/smoke-test.sh && \
     "${COMFYUI_PYTHON}" -m pip freeze | sort > /opt/vnccs/pip-freeze.txt && \
     printf '%s\n' \
@@ -137,13 +170,14 @@ RUN chmod +x /opt/vnccs/*.sh && \
       "SEEDVR2_REF=${SEEDVR2_REF}" \
       "EASY_SAM3_REF=${EASY_SAM3_REF}" \
       "SAM2_REF=${SAM2_REF}" \
+      "PRELOADED_MODEL_PROFILE=qwen-q4+anima+seedvr2+sam3+impact" \
       > /opt/vnccs/build-info.txt
 
 WORKDIR ${COMFYUI_DIR}
 
 EXPOSE 8188
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=600s --retries=5 \
     CMD curl -fsS http://127.0.0.1:8188/system_stats >/dev/null || exit 1
 
 ENTRYPOINT []

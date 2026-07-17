@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "part_size": 3000000000,
+  "models": [
+    {
+      "id": "qwen-q4",
+      "url": "https://huggingface.co/unsloth/Qwen-Image-Edit-2511-GGUF/resolve/0d33d9692b4b26212297240d87b0d4719aa4fd06/qwen-image-edit-2511-Q4_0.gguf",
+      "destination": "models/unet/qwen-image-edit-2511-Q4_0.gguf",
+      "size": 11852773984,
+      "sha256": "4b537c1e238f315fb4774e3ae677037b3d8bfde3e50a95d0b0a68dd9597b4f82",
+      "split": true
+    },
+    {
+      "id": "qie-text-encoder",
+      "url": "https://huggingface.co/f5aiteam/CLIP/resolve/20ba7c55ea2dd98bf0735e563370bf859fb73a43/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "destination": "models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "size": 9384670680,
+      "sha256": "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4",
+      "split": true
+    },
+    {
+      "id": "anima-base",
+      "url": "https://huggingface.co/circlestone-labs/Anima/resolve/9f3adf269682547794957a72d1ee6d70e616529e/split_files/diffusion_models/anima-base-v1.0.safetensors",
+      "destination": "models/diffusion_models/anima-base-v1.0.safetensors",
+      "size": 4182218328,
+      "sha256": "bd43b7cffe1ed1153d9c41e7beb2f18cb1273eafbaa3af3edd6a173dc90a006e"
+    },
+    {
+      "id": "anima-text-encoder",
+      "url": "https://huggingface.co/circlestone-labs/Anima/resolve/9f3adf269682547794957a72d1ee6d70e616529e/split_files/text_encoders/qwen_3_06b_base.safetensors",
+      "destination": "models/text_encoders/qwen_3_06b_base.safetensors",
+      "size": 1192135096,
+      "sha256": "cd2a512003e2f9f3cd3c32a9c3573f820bb28c940f73c57b1ddaa983d9223eba"
+    },
+    {
+      "id": "qwen-vae",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/46839d338df81ce625d5fae27d7e370314c0fbc9/split_files/vae/qwen_image_vae.safetensors",
+      "destination": "models/vae/qwen_image_vae.safetensors",
+      "size": 253806246,
+      "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f"
+    },
+    {
+      "id": "clothes-core",
+      "url": "https://huggingface.co/MIUProject/VNCCS_v3.0/resolve/4ff0bdccfb29d7fd9cf31ae10ae64c80eba413ec/models/loras/qwen/VNCCS/VNCCS_QIE2511_ClothesCore-RC3.7.safetensors",
+      "destination": "models/loras/qwen/VNCCS/VNCCS_QIE2511_ClothesCore-RC3.7.safetensors",
+      "size": 147687264,
+      "sha256": "f046c09ff88cf90dd16b26713bf1e0dcc9d12f66728d2f4a56d3e57cd78cda49"
+    },
+    {
+      "id": "pose-studio",
+      "url": "https://huggingface.co/MIUProject/VNCCS_PoseStudio/resolve/ba45075903203e511b054443d9e1c2c313b719ef/models/loras/qwen/VNCCS/VNCCS_QIE2511_PoseStudio_ART_V5.9.5.safetensors",
+      "destination": "models/loras/qwen/VNCCS/VNCCS_QIE2511_PoseStudio_ART_V5.9.5.safetensors",
+      "size": 1179883808,
+      "sha256": "f81f7f446f56188d96a1094ffe5d4183e7e4473d27eebb43e4c9555d3537bbb8"
+    },
+    {
+      "id": "qwen-lightning",
+      "url": "https://huggingface.co/MIUProject/VNCCS_v3.0/resolve/4ff0bdccfb29d7fd9cf31ae10ae64c80eba413ec/models/loras/qwen/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
+      "destination": "models/loras/qwen/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
+      "size": 849608296,
+      "sha256": "22226e8d05d354bb356627d428809f5afd7819399b077238a2b70a82883a904f"
+    },
+    {
+      "id": "anima-turbo",
+      "url": "https://huggingface.co/MIUProject/VNCCS_v3.0/resolve/4ff0bdccfb29d7fd9cf31ae10ae64c80eba413ec/models/loras/Anima/anima-turbo-lora-v0.1.safetensors",
+      "destination": "models/loras/Anima/anima-turbo-lora-v0.1.safetensors",
+      "size": 148902616,
+      "sha256": "68ed0aec6ff4ebc3add1180e191797adb5aa6b69dd8b0fc8aa9e680145f65aac"
+    },
+    {
+      "id": "seedvr2-q4",
+      "url": "https://huggingface.co/AInVFX/SeedVR2_comfyUI/resolve/ac66d6d98fa49975d893b58c55bff7677191c862/seedvr2_ema_3b-Q4_K_M.gguf",
+      "destination": "models/SEEDVR2/seedvr2_ema_3b-Q4_K_M.gguf",
+      "size": 1995344224,
+      "sha256": "e665e3909de1a8c88a69c609bca9d43ff5a134647face2ce4497640cc3597f0e"
+    },
+    {
+      "id": "seedvr2-vae",
+      "url": "https://huggingface.co/numz/SeedVR2_comfyUI/resolve/09ced71023636e9bc8cdf9cdecfb2625d1e691e8/ema_vae_fp16.safetensors",
+      "destination": "models/SEEDVR2/ema_vae_fp16.safetensors",
+      "size": 501324814,
+      "sha256": "20678548f420d98d26f11442d3528f8b8c94e57ee046ef93dbb7633da8612ca1"
+    },
+    {
+      "id": "sam3-fp16",
+      "url": "https://huggingface.co/yolain/sam3-safetensors/resolve/eb174af94625028887dfe92d2d8483ca5a5d3336/sam3-fp16.safetensors",
+      "destination": "models/sam3/sam3-fp16.safetensors",
+      "size": 1720307872,
+      "sha256": "be55ae841767fe27e542eb3476926da61083fe58f2d95895ad5ba745fa1f41b3"
+    },
+    {
+      "id": "face-yolo",
+      "url": "https://huggingface.co/Bingsu/adetailer/resolve/53cc19de382014514d9d4038601d261a7faa9b7b/face_yolov8m.pt",
+      "destination": "models/ultralytics/bbox/face_yolov8m.pt",
+      "size": 52026019,
+      "sha256": "717923c19b3f4bbf5250b728f1fa6b2cb72a33aed1d236ea9caf0e21ad943e5f"
+    },
+    {
+      "id": "sam-vit-b",
+      "url": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
+      "destination": "models/sams/sam_vit_b_01ec64.pth",
+      "size": 375042383,
+      "sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912"
+    }
+  ]
+}

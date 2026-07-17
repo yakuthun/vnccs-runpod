@@ -29,6 +29,12 @@ if [[ "${GPU_READY}" != "1" ]]; then
 fi
 
 cat /opt/vnccs/build-info.txt
+
+# GHCR limits individual layers to 10 GB. The two largest immutable model
+# files are stored as verified 3 GB parts and assembled once on the Pod's
+# local container disk before ComfyUI starts. No network access is used here.
+"$P" /opt/vnccs/preload_models.py assemble
+
 cd "$C"
 
 exec "$P" main.py \

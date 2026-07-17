@@ -6,7 +6,7 @@ on:
       version:
         description: "Immutable image tag, for example v1.0.0"
         required: true
-        default: "v1.0.0"
+        default: "v1.1.0"
 
 permissions:
   contents: read
@@ -15,7 +15,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 240
 
     steps:
       - name: Check out repository
@@ -26,7 +26,9 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/share/swift
           sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache
           sudo rm -rf /usr/local/share/boost
           docker system prune --all --force || true
           df -h
@@ -70,5 +72,6 @@ jobs:
             org.opencontainers.image.version=${{ steps.vars.outputs.version }}
           provenance: false
           sbom: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=min
+          # The ready-to-run model profile is about 32 GB. Exporting those
+          # immutable layers to the 10 GB Actions cache would fail and would
+          # duplicate registry uploads, so this release build skips GHA cache.
