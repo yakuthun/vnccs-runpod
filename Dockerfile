@@ -43,25 +43,21 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY scripts/install_requirements.py /opt/vnccs/install_requirements.py
+COPY scripts/clone-custom-nodes.sh /opt/vnccs/clone-custom-nodes.sh
 
 RUN test -f "${COMFYUI_DIR}/main.py" && \
     test -x "${COMFYUI_PYTHON}" && \
     mkdir -p "${COMFYUI_DIR}/custom_nodes" && \
-    clone_ref() { \
-        local url="$1" ref="$2" dest="$3"; \
-        rm -rf "$dest"; \
-        git init "$dest"; \
-        git -C "$dest" remote add origin "$url"; \
-        git -C "$dest" fetch --depth 1 origin "$ref"; \
-        git -C "$dest" checkout --detach FETCH_HEAD; \
-    }; \
-    clone_ref https://github.com/AHEKOT/ComfyUI_VNCCS.git "$VNCCS_REF" "${COMFYUI_DIR}/custom_nodes/ComfyUI_VNCCS"; \
-    clone_ref https://github.com/AHEKOT/ComfyUI_VNCCS_Utils.git "$VNCCS_UTILS_REF" "${COMFYUI_DIR}/custom_nodes/ComfyUI_VNCCS_Utils"; \
-    clone_ref https://github.com/city96/ComfyUI-GGUF.git "$GGUF_REF" "${COMFYUI_DIR}/custom_nodes/ComfyUI-GGUF"; \
-    clone_ref https://github.com/ltdrdata/ComfyUI-Impact-Pack.git "$IMPACT_REF" "${COMFYUI_DIR}/custom_nodes/ComfyUI-Impact-Pack"; \
-    clone_ref https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git "$IMPACT_SUBPACK_REF" "${COMFYUI_DIR}/custom_nodes/ComfyUI-Impact-Subpack"; \
-    clone_ref https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git "$SEEDVR2_REF" "${COMFYUI_DIR}/custom_nodes/ComfyUI-SeedVR2_VideoUpscaler"; \
-    clone_ref https://github.com/yolain/ComfyUI-Easy-Sam3.git "$EASY_SAM3_REF" "${COMFYUI_DIR}/custom_nodes/ComfyUI-Easy-Sam3"
+    chmod +x /opt/vnccs/clone-custom-nodes.sh && \
+    COMFYUI_DIR="${COMFYUI_DIR}" \
+    VNCCS_REF="${VNCCS_REF}" \
+    VNCCS_UTILS_REF="${VNCCS_UTILS_REF}" \
+    GGUF_REF="${GGUF_REF}" \
+    IMPACT_REF="${IMPACT_REF}" \
+    IMPACT_SUBPACK_REF="${IMPACT_SUBPACK_REF}" \
+    SEEDVR2_REF="${SEEDVR2_REF}" \
+    EASY_SAM3_REF="${EASY_SAM3_REF}" \
+    /opt/vnccs/clone-custom-nodes.sh
 
 # Keep the base image's Torch/CUDA stack untouched. The helper removes torch,
 # torchvision, torchaudio, triton and llama-cpp-python from node requirements.
