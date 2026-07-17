@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
-# This is the exact RunPod ComfyUI image that was already proven to boot on the Pod.
-FROM runpod/comfyui:cuda12.8
+# Pin the exact RunPod image used by the working template.  Do not use the
+# mutable cuda12.8 tag: RunPod can move it to a different filesystem/runtime.
+FROM runpod/comfyui:1.4.0-cuda12.8@sha256:d624068cb75df9bc7ea3304186bab792a8c2be02496d55e5fa59086c247d9694
 
 ARG VNCCS_REF=050cb4b15875a7eefc180d1f00b97bf5e8b17104
 ARG VNCCS_UTILS_REF=1908ddfa8a5084a360783ca596f27678743c5496
@@ -19,7 +20,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     COMFYUI_DIR=/workspace/runpod-slim/ComfyUI \
-    COMFYUI_PYTHON=/workspace/runpod-slim/ComfyUI/.venv-cu128/bin/python
+    COMFYUI_BAKED_DIR=/opt/comfyui-baked \
+    COMFYUI_BUILD_PYTHON=/usr/bin/python3.12
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -45,11 +47,11 @@ RUN apt-get update && \
 COPY scripts/install_requirements.py /opt/vnccs/install_requirements.py
 COPY scripts/clone-custom-nodes.sh /opt/vnccs/clone-custom-nodes.sh
 
-RUN test -f "${COMFYUI_DIR}/main.py" && \
-    test -x "${COMFYUI_PYTHON}" && \
-    mkdir -p "${COMFYUI_DIR}/custom_nodes" && \
+RUN test -f "${COMFYUI_BAKED_DIR}/main.py" && \
+    test -x "${COMFYUI_BUILD_PYTHON}" && \
+    mkdir -p "${COMFYUI_BAKED_DIR}/custom_nodes" && \
     chmod +x /opt/vnccs/clone-custom-nodes.sh && \
-    COMFYUI_DIR="${COMFYUI_DIR}" \
+    COMFYUI_DIR="${COMFYUI_BAKED_DIR}" \
     VNCCS_REF="${VNCCS_REF}" \
     VNCCS_UTILS_REF="${VNCCS_UTILS_REF}" \
     GGUF_REF="${GGUF_REF}" \
@@ -61,8 +63,8 @@ RUN test -f "${COMFYUI_DIR}/main.py" && \
 
 # Keep the base image's Torch/CUDA stack untouched. The helper removes torch,
 # torchvision, torchaudio, triton and llama-cpp-python from node requirements.
-RUN "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --upgrade "pip<26" packaging setuptools wheel && \
-    "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --prefer-binary \
+RUN "${COMFYUI_BUILD_PYTHON}" -m pip install --no-cache-dir --upgrade "pip<26" packaging setuptools wheel && \
+    "${COMFYUI_BUILD_PYTHON}" -m pip install --no-cache-dir --prefer-binary \
         "av==16.0.1" \
         "gguf==0.13.0" \
         "iopath==0.1.10" \
@@ -75,47 +77,48 @@ RUN "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --upgrade "pip<26" packagi
         "timm==1.0.17" \
         "transformers==4.57.6" \
         "ultralytics==8.3.162" && \
-    "${COMFYUI_PYTHON}" -m pip install --no-cache-dir \
+    "${COMFYUI_BUILD_PYTHON}" -m pip install --no-cache-dir \
         "git+https://github.com/facebookresearch/sam2.git@${SAM2_REF}" && \
-    "${COMFYUI_PYTHON}" /opt/vnccs/install_requirements.py \
-        "${COMFYUI_DIR}/custom_nodes/ComfyUI_VNCCS/requirements.txt" \
-        "${COMFYUI_DIR}/custom_nodes/ComfyUI_VNCCS_Utils/requirements.txt" \
-        "${COMFYUI_DIR}/custom_nodes/ComfyUI-GGUF/requirements.txt" \
-        "${COMFYUI_DIR}/custom_nodes/ComfyUI-Impact-Pack/requirements.txt" \
-        "${COMFYUI_DIR}/custom_nodes/ComfyUI-Impact-Subpack/requirements.txt" \
-        "${COMFYUI_DIR}/custom_nodes/ComfyUI-SeedVR2_VideoUpscaler/requirements.txt" \
-        "${COMFYUI_DIR}/custom_nodes/ComfyUI-Easy-Sam3/requirements.txt" && \
-    "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --no-deps --pre --upgrade comfyui-manager && \
-    "${COMFYUI_PYTHON}" -c 'import torch; print("Torch preserved:", torch.__version__, "CUDA:", torch.version.cuda)'
+    "${COMFYUI_BUILD_PYTHON}" /opt/vnccs/install_requirements.py \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/ComfyUI_VNCCS/requirements.txt" \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/ComfyUI_VNCCS_Utils/requirements.txt" \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/ComfyUI-GGUF/requirements.txt" \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/ComfyUI-Impact-Pack/requirements.txt" \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/ComfyUI-Impact-Subpack/requirements.txt" \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/ComfyUI-SeedVR2_VideoUpscaler/requirements.txt" \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/ComfyUI-Easy-Sam3/requirements.txt" && \
+    "${COMFYUI_BUILD_PYTHON}" -m pip install --no-cache-dir --no-deps --pre --upgrade comfyui-manager && \
+    "${COMFYUI_BUILD_PYTHON}" -c 'import torch; print("Torch preserved:", torch.__version__, "CUDA:", torch.version.cuda)'
 
 COPY scripts/verify_nodes.py /opt/vnccs/verify_nodes.py
 COPY scripts/verify_workflows.py /opt/vnccs/verify_workflows.py
 COPY scripts/verify-running-pod.py /opt/vnccs/verify-running-pod.py
 COPY scripts/download-workflow-models.py /opt/vnccs/download-workflow-models.py
 COPY scripts/smoke-test.sh /opt/vnccs/smoke-test.sh
-COPY scripts/start.sh /opt/vnccs/start.sh
 
 # These nodes are project-owned workflow infrastructure, not part of the
 # upstream AHEKOT/VNCCS repository.  They must travel with every immutable
 # image or the sprite workflows will open with missing class_type errors.
-COPY custom_nodes/VNCCS_SourcePoseSprite "${COMFYUI_DIR}/custom_nodes/VNCCS_SourcePoseSprite"
+COPY custom_nodes/VNCCS_SourcePoseSprite "${COMFYUI_BAKED_DIR}/custom_nodes/VNCCS_SourcePoseSprite"
 COPY VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json /opt/vnccs/workflows/VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json
 COPY VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json /opt/vnccs/workflows/VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json
 
 RUN chmod +x /opt/vnccs/*.sh /opt/vnccs/*.py && \
-    mkdir -p "${COMFYUI_DIR}/user/default/workflows" && \
-    cp /opt/vnccs/workflows/*.json "${COMFYUI_DIR}/user/default/workflows/" && \
-    "${COMFYUI_PYTHON}" -m py_compile \
-        "${COMFYUI_DIR}/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" && \
-    /opt/vnccs/smoke-test.sh && \
-    "${COMFYUI_PYTHON}" -m pip freeze | sort > /opt/vnccs/pip-freeze.txt && \
+    mkdir -p "${COMFYUI_BAKED_DIR}/user/default/workflows" && \
+    cp /opt/vnccs/workflows/*.json "${COMFYUI_BAKED_DIR}/user/default/workflows/" && \
+    "${COMFYUI_BUILD_PYTHON}" -m py_compile \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" && \
+    COMFYUI_DIR="${COMFYUI_BAKED_DIR}" \
+      COMFYUI_PYTHON="${COMFYUI_BUILD_PYTHON}" \
+      /opt/vnccs/smoke-test.sh && \
+    "${COMFYUI_BUILD_PYTHON}" -m pip freeze | sort > /opt/vnccs/pip-freeze.txt && \
     sha256sum \
-      "${COMFYUI_DIR}/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" \
-      "${COMFYUI_DIR}/custom_nodes/VNCCS_SourcePoseSprite/web/adaptive_pose_studio.js" \
+      "${COMFYUI_BAKED_DIR}/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" \
+      "${COMFYUI_BAKED_DIR}/custom_nodes/VNCCS_SourcePoseSprite/web/adaptive_pose_studio.js" \
       /opt/vnccs/workflows/*.json \
       > /opt/vnccs/workflow-files.sha256 && \
     printf '%s\n' \
-      "BASE_IMAGE=runpod/comfyui:cuda12.8" \
+      "BASE_IMAGE=runpod/comfyui:1.4.0-cuda12.8@sha256:d624068cb75df9bc7ea3304186bab792a8c2be02496d55e5fa59086c247d9694" \
       "VNCCS_REF=${VNCCS_REF}" \
       "VNCCS_UTILS_REF=${VNCCS_UTILS_REF}" \
       "GGUF_REF=${GGUF_REF}" \
@@ -128,12 +131,7 @@ RUN chmod +x /opt/vnccs/*.sh /opt/vnccs/*.py && \
       "PROJECT_WORKFLOWS=Adaptive,No3D" \
       > /opt/vnccs/build-info.txt
 
-WORKDIR ${COMFYUI_DIR}
-
 EXPOSE 8188
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=5 \
     CMD curl -fsS http://127.0.0.1:8188/system_stats >/dev/null || exit 1
-
-ENTRYPOINT []
-CMD ["/opt/vnccs/start.sh"]
