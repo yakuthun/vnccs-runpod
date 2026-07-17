@@ -93,12 +93,31 @@ RUN "${COMFYUI_PYTHON}" -m pip install --no-cache-dir --upgrade "pip<26" packagi
     "${COMFYUI_PYTHON}" -c 'import torch; print("Torch preserved:", torch.__version__, "CUDA:", torch.version.cuda)'
 
 COPY scripts/verify_nodes.py /opt/vnccs/verify_nodes.py
+COPY scripts/verify_workflows.py /opt/vnccs/verify_workflows.py
+COPY scripts/verify-running-pod.py /opt/vnccs/verify-running-pod.py
+COPY scripts/download-workflow-models.py /opt/vnccs/download-workflow-models.py
 COPY scripts/smoke-test.sh /opt/vnccs/smoke-test.sh
 COPY scripts/start.sh /opt/vnccs/start.sh
 
-RUN chmod +x /opt/vnccs/*.sh && \
+# These nodes are project-owned workflow infrastructure, not part of the
+# upstream AHEKOT/VNCCS repository.  They must travel with every immutable
+# image or the sprite workflows will open with missing class_type errors.
+COPY custom_nodes/VNCCS_SourcePoseSprite "${COMFYUI_DIR}/custom_nodes/VNCCS_SourcePoseSprite"
+COPY VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json /opt/vnccs/workflows/VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json
+COPY VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json /opt/vnccs/workflows/VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json
+
+RUN chmod +x /opt/vnccs/*.sh /opt/vnccs/*.py && \
+    mkdir -p "${COMFYUI_DIR}/user/default/workflows" && \
+    cp /opt/vnccs/workflows/*.json "${COMFYUI_DIR}/user/default/workflows/" && \
+    "${COMFYUI_PYTHON}" -m py_compile \
+        "${COMFYUI_DIR}/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" && \
     /opt/vnccs/smoke-test.sh && \
     "${COMFYUI_PYTHON}" -m pip freeze | sort > /opt/vnccs/pip-freeze.txt && \
+    sha256sum \
+      "${COMFYUI_DIR}/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" \
+      "${COMFYUI_DIR}/custom_nodes/VNCCS_SourcePoseSprite/web/adaptive_pose_studio.js" \
+      /opt/vnccs/workflows/*.json \
+      > /opt/vnccs/workflow-files.sha256 && \
     printf '%s\n' \
       "BASE_IMAGE=runpod/comfyui:cuda12.8" \
       "VNCCS_REF=${VNCCS_REF}" \
@@ -109,6 +128,8 @@ RUN chmod +x /opt/vnccs/*.sh && \
       "SEEDVR2_REF=${SEEDVR2_REF}" \
       "EASY_SAM3_REF=${EASY_SAM3_REF}" \
       "SAM2_REF=${SAM2_REF}" \
+      "PROJECT_CUSTOM_NODES=VNCCS_SourcePoseSprite" \
+      "PROJECT_WORKFLOWS=Adaptive,No3D" \
       > /opt/vnccs/build-info.txt
 
 WORKDIR ${COMFYUI_DIR}

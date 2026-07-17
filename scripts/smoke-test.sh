@@ -35,6 +35,9 @@ for _ in $(seq 1 120); do
 
     if curl -fsS http://127.0.0.1:8199/object_info >"${JSON}"; then
         "$P" /opt/vnccs/verify_nodes.py "${JSON}"
+        "$P" /opt/vnccs/verify_workflows.py \
+            "${JSON}" \
+            /opt/vnccs/workflows/*.json
         exit 0
     fi
     sleep 2

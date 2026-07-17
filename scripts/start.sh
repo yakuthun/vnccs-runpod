@@ -29,6 +29,8 @@ if [[ "${GPU_READY}" != "1" ]]; then
 fi
 
 cat /opt/vnccs/build-info.txt
+echo "Bundled workflow file hashes:"
+cat /opt/vnccs/workflow-files.sha256
 cd "$C"
 
 exec "$P" main.py \

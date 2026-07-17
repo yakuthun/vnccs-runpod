@@ -1,0 +1,19 @@
+Install this complete folder as:
+
+  /workspace/runpod-slim/ComfyUI/custom_nodes/VNCCS_SourcePoseSprite
+
+Required existing packages:
+
+  ComfyUI_VNCCS
+  ComfyUI_VNCCS_Utils
+
+Restart ComfyUI after copying the folder. Verify these class types through
+/object_info before loading the workflow:
+
+  VNCCS_AutoPersonMask
+  VNCCS_AdaptivePoseGuide
+  VNCCS_AdaptiveSpritePlacement
+  VNCCS_SavePoseSpritePackage
+
+These nodes are project-specific helpers and are intentionally not part of
+the official AHEKOT/ComfyUI_VNCCS repository.
