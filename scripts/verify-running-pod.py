@@ -22,6 +22,9 @@ REQUIRED_NODES = (
     "VNCCS_NeutralContourPoseGuide",
     "VNCCS_AdaptiveSpritePlacement",
     "VNCCS_SavePoseSpritePackage",
+    "VNCCS_MaskChoice",
+    "VNCCS_MaskedCropPrepare",
+    "VNCCS_ExactMaskedComposite",
 )
 
 REQUIRED_FILES = {
@@ -60,6 +63,7 @@ def main() -> None:
     workflows = (
         "VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json",
         "VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json",
+        "Qwen_Two_Image_Pose_Character_Replacement_v19.json",
     )
     for name in workflows:
         path = COMFYUI_DIR / "user/default/workflows" / name

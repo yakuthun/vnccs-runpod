@@ -103,12 +103,14 @@ COPY scripts/runpod-entrypoint.sh /opt/vnccs/runpod-entrypoint.sh
 COPY custom_nodes/VNCCS_SourcePoseSprite "${COMFYUI_BAKED_DIR}/custom_nodes/VNCCS_SourcePoseSprite"
 COPY VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json /opt/vnccs/workflows/VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json
 COPY VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json /opt/vnccs/workflows/VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json
+COPY Qwen_Two_Image_Pose_Character_Replacement_v19.json /opt/vnccs/workflows/Qwen_Two_Image_Pose_Character_Replacement_v19.json
 
 RUN chmod +x /opt/vnccs/*.sh /opt/vnccs/*.py && \
     mkdir -p "${COMFYUI_BAKED_DIR}/user/default/workflows" && \
     cp /opt/vnccs/workflows/*.json "${COMFYUI_BAKED_DIR}/user/default/workflows/" && \
     "${COMFYUI_BUILD_PYTHON}" -m py_compile \
-        "${COMFYUI_BAKED_DIR}/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" && \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" \
+        "${COMFYUI_BAKED_DIR}/custom_nodes/VNCCS_SourcePoseSprite/masked_replacement_nodes.py" && \
     COMFYUI_DIR="${COMFYUI_BAKED_DIR}" \
       COMFYUI_PYTHON="${COMFYUI_BUILD_PYTHON}" \
       /opt/vnccs/smoke-test.sh && \
@@ -129,7 +131,7 @@ RUN chmod +x /opt/vnccs/*.sh /opt/vnccs/*.py && \
       "EASY_SAM3_REF=${EASY_SAM3_REF}" \
       "SAM2_REF=${SAM2_REF}" \
       "PROJECT_CUSTOM_NODES=VNCCS_SourcePoseSprite" \
-      "PROJECT_WORKFLOWS=Adaptive,No3D" \
+      "PROJECT_WORKFLOWS=Adaptive,No3D,MaskedReplacement" \
       > /opt/vnccs/build-info.txt
 
 EXPOSE 8188

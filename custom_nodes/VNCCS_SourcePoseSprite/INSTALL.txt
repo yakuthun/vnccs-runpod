@@ -14,6 +14,9 @@ Restart ComfyUI after copying the folder. Verify these class types through
   VNCCS_AdaptivePoseGuide
   VNCCS_AdaptiveSpritePlacement
   VNCCS_SavePoseSpritePackage
+  VNCCS_MaskChoice
+  VNCCS_MaskedCropPrepare
+  VNCCS_ExactMaskedComposite
 
 These nodes are project-specific helpers and are intentionally not part of
 the official AHEKOT/ComfyUI_VNCCS repository.

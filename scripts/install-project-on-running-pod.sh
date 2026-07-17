@@ -41,6 +41,8 @@ install -m 0644 "$ROOT/custom_nodes/VNCCS_SourcePoseSprite/__init__.py" \
     "$C/custom_nodes/VNCCS_SourcePoseSprite/__init__.py"
 install -m 0644 "$ROOT/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" \
     "$C/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py"
+install -m 0644 "$ROOT/custom_nodes/VNCCS_SourcePoseSprite/masked_replacement_nodes.py" \
+    "$C/custom_nodes/VNCCS_SourcePoseSprite/masked_replacement_nodes.py"
 install -m 0644 "$ROOT/custom_nodes/VNCCS_SourcePoseSprite/web/adaptive_pose_studio.js" \
     "$C/custom_nodes/VNCCS_SourcePoseSprite/web/adaptive_pose_studio.js"
 
@@ -49,9 +51,12 @@ install -m 0644 "$ROOT/VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json" \
     "$C/user/default/workflows/VNCCS_Source_Pose_To_Transparent_Sprite_Adaptive.json"
 install -m 0644 "$ROOT/VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json" \
     "$C/user/default/workflows/VNCCS_Source_Visible_Pose_To_Transparent_Sprite_No3D.json"
+install -m 0644 "$ROOT/Qwen_Two_Image_Pose_Character_Replacement_v19.json" \
+    "$C/user/default/workflows/Qwen_Two_Image_Pose_Character_Replacement_v19.json"
 
 "$P" -m py_compile \
-    "$C/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py"
+    "$C/custom_nodes/VNCCS_SourcePoseSprite/source_pose_sprite_nodes.py" \
+    "$C/custom_nodes/VNCCS_SourcePoseSprite/masked_replacement_nodes.py"
 
 echo "Project node package and workflows installed successfully."
 echo "Restart the existing ComfyUI process once, then verify /object_info."

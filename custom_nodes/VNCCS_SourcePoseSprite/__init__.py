@@ -1,4 +1,22 @@
-from .source_pose_sprite_nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+from .masked_replacement_nodes import (
+    NODE_CLASS_MAPPINGS as MASKED_REPLACEMENT_NODE_CLASS_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as MASKED_REPLACEMENT_NODE_DISPLAY_NAME_MAPPINGS,
+)
+from .source_pose_sprite_nodes import (
+    NODE_CLASS_MAPPINGS as SPRITE_NODE_CLASS_MAPPINGS,
+    NODE_DISPLAY_NAME_MAPPINGS as SPRITE_NODE_DISPLAY_NAME_MAPPINGS,
+)
+
+# The two modules intentionally share VNCCS_AutoPersonMask.  The sprite
+# implementation is the canonical version, so it is merged last.
+NODE_CLASS_MAPPINGS = {
+    **MASKED_REPLACEMENT_NODE_CLASS_MAPPINGS,
+    **SPRITE_NODE_CLASS_MAPPINGS,
+}
+NODE_DISPLAY_NAME_MAPPINGS = {
+    **MASKED_REPLACEMENT_NODE_DISPLAY_NAME_MAPPINGS,
+    **SPRITE_NODE_DISPLAY_NAME_MAPPINGS,
+}
 
 WEB_DIRECTORY = "./web"
 

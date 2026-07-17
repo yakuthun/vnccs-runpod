@@ -18,6 +18,9 @@ REQUIRED_NODES = (
     "VNCCS_NeutralContourPoseGuide",
     "VNCCS_AdaptiveSpritePlacement",
     "VNCCS_SavePoseSpritePackage",
+    "VNCCS_MaskChoice",
+    "VNCCS_MaskedCropPrepare",
+    "VNCCS_ExactMaskedComposite",
 )
 
 
